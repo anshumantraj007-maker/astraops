@@ -1,0 +1,6 @@
+{
+  "name": "AstraOps",
+  "description": "Master Astrological Strategist and Tactical Accountability Coach for UPSC APFC & Allahabad HC RO/ARO.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
