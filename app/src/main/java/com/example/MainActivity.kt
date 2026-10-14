@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dashboard
@@ -64,6 +65,7 @@ import com.example.ui.screens.CoachTerminalScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.DeploymentTimerScreen
 import com.example.ui.screens.NoGuessProtocolScreen
+import com.example.ui.screens.SyllabusCoverageScreen
 import com.example.ui.screens.SyllabusSyntaxScreen
 import com.example.ui.theme.BudhadityaGold
 import com.example.ui.theme.MarsRed
@@ -103,7 +105,10 @@ fun AstraApp(viewModel: AstraViewModel) {
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.testTag("app_bar_title_row")
+                    ) {
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
@@ -135,6 +140,16 @@ fun AstraApp(viewModel: AstraViewModel) {
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.navigateTo(AstraScreen.SYLLABUS_TRACKER) },
+                        modifier = Modifier.testTag("top_bar_coverage_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Analytics,
+                            contentDescription = "Syllabus Coverage Tracker",
+                            tint = if (currentScreen == AstraScreen.SYLLABUS_TRACKER) MarsRed else TextSecondary
+                        )
+                    }
                     IconButton(
                         onClick = { viewModel.navigateTo(AstraScreen.ASTRO_BLUEPRINT) },
                         modifier = Modifier.testTag("top_bar_blueprint_button")
@@ -190,6 +205,14 @@ fun AstraApp(viewModel: AstraViewModel) {
                     testTag = "nav_timer"
                 )
                 NavBarItem(
+                    screen = AstraScreen.SYLLABUS_TRACKER,
+                    label = "Coverage",
+                    icon = Icons.Default.Analytics,
+                    isSelected = currentScreen == AstraScreen.SYLLABUS_TRACKER,
+                    onClick = { viewModel.navigateTo(AstraScreen.SYLLABUS_TRACKER) },
+                    testTag = "nav_coverage"
+                )
+                NavBarItem(
                     screen = AstraScreen.SYLLABUS_SYNTAX,
                     label = "IT Trees",
                     icon = Icons.Default.Code,
@@ -204,14 +227,6 @@ fun AstraApp(viewModel: AstraViewModel) {
                     isSelected = currentScreen == AstraScreen.NO_GUESS_PROTOCOL,
                     onClick = { viewModel.navigateTo(AstraScreen.NO_GUESS_PROTOCOL) },
                     testTag = "nav_noguess"
-                )
-                NavBarItem(
-                    screen = AstraScreen.COACH_TERMINAL,
-                    label = "Coach",
-                    icon = Icons.Default.Terminal,
-                    isSelected = currentScreen == AstraScreen.COACH_TERMINAL,
-                    onClick = { viewModel.navigateTo(AstraScreen.COACH_TERMINAL) },
-                    testTag = "nav_coach"
                 )
             }
         }
@@ -229,6 +244,7 @@ fun AstraApp(viewModel: AstraViewModel) {
                 when (screen) {
                     AstraScreen.COMMAND_DASHBOARD -> DashboardScreen(viewModel = viewModel)
                     AstraScreen.DEPLOYMENT_TIMER -> DeploymentTimerScreen(viewModel = viewModel)
+                    AstraScreen.SYLLABUS_TRACKER -> SyllabusCoverageScreen(viewModel = viewModel)
                     AstraScreen.SYLLABUS_SYNTAX -> SyllabusSyntaxScreen(viewModel = viewModel)
                     AstraScreen.NO_GUESS_PROTOCOL -> NoGuessProtocolScreen(viewModel = viewModel)
                     AstraScreen.COACH_TERMINAL -> CoachTerminalScreen(viewModel = viewModel)

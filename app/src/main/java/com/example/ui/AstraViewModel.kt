@@ -6,7 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.AstraDatabase
 import com.example.data.model.DeploymentBlockEntity
 import com.example.data.model.MicroTaskEntity
+import com.example.data.model.StudySessionLogEntity
+import com.example.data.model.SyllabusCoverageEntity
 import com.example.data.model.SystemBootEntity
+import com.example.data.repository.SyllabusCoverageRepository
 import com.example.domain.astro.AstroTacticalEngine
 import com.example.domain.astro.TacticalWeatherReport
 import com.example.domain.coach.CoachMessage
@@ -31,6 +34,7 @@ enum class AstraScreen(val title: String, val iconTag: String) {
     COMMAND_DASHBOARD("Ops Radar", "radar"),
     DEPLOYMENT_TIMER("Mechanical Execution", "timer"),
     SYLLABUS_SYNTAX("IT Logic Trees", "code"),
+    SYLLABUS_TRACKER("Coverage Logs", "analytics"),
     NO_GUESS_PROTOCOL("No-Guess Drills", "shield"),
     COACH_TERMINAL("Tactical Coach", "terminal"),
     ASTRO_BLUEPRINT("Astrological DNA", "dna")
@@ -42,6 +46,8 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AstraDatabase.getDatabase(application, viewModelScope)
     private val dao = db.astraDao()
+    private val coverageDao = db.syllabusCoverageDao()
+    val coverageRepository = SyllabusCoverageRepository(coverageDao)
 
     // Screen Navigation
     private val _currentScreen = MutableStateFlow(AstraScreen.COMMAND_DASHBOARD)
@@ -76,6 +82,28 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
         55
     )
 
+    // Syllabus Coverage & Study Session Streams
+    private val _selectedCoverageExam = MutableStateFlow("UPSC APFC")
+    val selectedCoverageExam: StateFlow<String> = _selectedCoverageExam.asStateFlow()
+
+    val apfcCoverage = coverageRepository.getCoverageByExam("UPSC APFC").stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
+    val roAroCoverage = coverageRepository.getCoverageByExam("Allahabad HC RO/ARO").stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
+    val studySessionLogs = coverageDao.getAllSessionLogs().stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
     // Today's System Boot State
     private val todayString = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
     private val _bootState = MutableStateFlow(
@@ -107,6 +135,9 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _activeTopic = MutableStateFlow("Standing Orders & Dispute Resolution (Code 2020)")
     val activeTopic: StateFlow<String> = _activeTopic.asStateFlow()
+
+    private val _activeModuleCode = MutableStateFlow<String?>("APFC_IR_01")
+    val activeModuleCode: StateFlow<String?> = _activeModuleCode.asStateFlow()
 
     private val _sessionPyqs = MutableStateFlow(0)
     val sessionPyqs: StateFlow<Int> = _sessionPyqs.asStateFlow()
@@ -154,6 +185,10 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
         _currentScreen.value = screen
     }
 
+    fun setCoverageExamFilter(exam: String) {
+        _selectedCoverageExam.value = exam
+    }
+
     // System Boot Protocols
     fun toggleSilverGlass() {
         val updated = _bootState.value.copy(
@@ -191,10 +226,11 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setDeploymentDetails(exam: String, subject: String, topic: String) {
+    fun setDeploymentDetails(exam: String, subject: String, topic: String, moduleCode: String? = null) {
         _activeExam.value = exam
         _activeSubject.value = subject
         _activeTopic.value = topic
+        _activeModuleCode.value = moduleCode
     }
 
     fun startTimer() {
@@ -245,6 +281,7 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         viewModelScope.launch {
+            // Log in deployment_blocks
             dao.insertDeployment(
                 DeploymentBlockEntity(
                     examType = _activeExam.value,
@@ -256,9 +293,63 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
                     notes = "Mechanical Mars execution block completed. Bypassed mental friction."
                 )
             )
+
+            // Also record in study_session_logs and update syllabus coverage
+            coverageRepository.recordStudySession(
+                StudySessionLogEntity(
+                    examType = _activeExam.value,
+                    subject = _activeSubject.value,
+                    topic = _activeTopic.value,
+                    moduleCode = _activeModuleCode.value,
+                    durationMinutes = spentMinutes,
+                    pyqsAttempted = _sessionPyqs.value,
+                    pyqsCorrect = (_sessionPyqs.value * 0.9f).toInt(),
+                    eliminationAccuracy = 90f,
+                    cognitiveState = if (isFull) "PEAK_MOMENTUM" else "SATURN_STEADY_GRIND",
+                    tacticalNotes = "Completed mechanical execution session. Bypassed 8th house analysis paralysis."
+                )
+            )
+
             resetTimer()
             _sessionPyqs.value = 0
             _tacticalWeather.value = AstroTacticalEngine.calculateTacticalWeather()
+        }
+    }
+
+    // Direct Study Session Logger from Syllabus Coverage Tracker
+    fun logStudySessionDirectly(
+        examType: String,
+        subject: String,
+        topic: String,
+        moduleCode: String?,
+        durationMinutes: Int,
+        pyqsAttempted: Int,
+        pyqsCorrect: Int,
+        cognitiveState: String,
+        notes: String
+    ) {
+        viewModelScope.launch {
+            val accuracy = if (pyqsAttempted > 0) (pyqsCorrect.toFloat() / pyqsAttempted.toFloat()) * 100f else 0f
+            coverageRepository.recordStudySession(
+                StudySessionLogEntity(
+                    examType = examType,
+                    subject = subject,
+                    topic = topic,
+                    moduleCode = moduleCode,
+                    durationMinutes = durationMinutes,
+                    pyqsAttempted = pyqsAttempted,
+                    pyqsCorrect = pyqsCorrect,
+                    eliminationAccuracy = accuracy,
+                    cognitiveState = cognitiveState,
+                    tacticalNotes = notes
+                )
+            )
+        }
+    }
+
+    fun incrementModuleRevision(moduleId: Long) {
+        viewModelScope.launch {
+            coverageRepository.incrementRevision(moduleId)
         }
     }
 
@@ -299,7 +390,6 @@ class AstraViewModel(application: Application) : AndroidViewModel(application) {
             current.remove(optionIndex)
         } else {
             current.add(optionIndex)
-            // If it was selected as answer, unselect it
             if (_selectedAnswerIndex.value == optionIndex) {
                 _selectedAnswerIndex.value = null
             }

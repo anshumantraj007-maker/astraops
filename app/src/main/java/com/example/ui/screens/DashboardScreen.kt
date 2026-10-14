@@ -387,6 +387,73 @@ fun DashboardScreen(
             }
         }
 
+        // Syllabus Coverage & Study Session Tracker Card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = TacticalSurfaceCard),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SaturnBlue.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                    .clickable { viewModel.navigateTo(AstraScreen.SYLLABUS_TRACKER) }
+                    .testTag("dashboard_syllabus_coverage_card")
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = null,
+                                tint = SaturnBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "SYLLABUS COVERAGE & SESSION LOGS",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SaturnBlue,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        TacticalBadge(
+                            text = "ROOM SCHEMA ACTIVE",
+                            accentColor = SuccessGreen
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Track topic mastery, time allocated vs completed, PYQ accuracy, and detailed session logs for UPSC APFC and Allahabad HC RO/ARO.",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "VIEW FULL COVERAGE & LOGS →",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BudhadityaGold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+        }
+
         // High-Yield Directives / Micro-Tasks
         item {
             Row(
